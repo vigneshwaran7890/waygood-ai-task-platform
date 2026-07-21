@@ -203,7 +203,7 @@ On a push to `main` or a version tag (never on a pull request, so a fork can't p
 or write to the infra repo):
 
 2. **Build & push** — multi-stage Docker images for all three services, pushed to Docker Hub
-   as `docker.io/vigneshwaran/ai-task-{backend,frontend,worker}`, tagged with the short commit SHA
+   as `docker.io/vignesh0756/ai-task-{backend,frontend,worker}`, tagged with the short commit SHA
    (or the version tag itself for a tagged release) plus a rolling `staging`/`latest` tag.
 3. **Update infrastructure repo** — checks out the infra repo, uses `kustomize edit set image`
    to bump the relevant overlay's image tags, and commits/pushes:

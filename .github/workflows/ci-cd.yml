@@ -9,7 +9,7 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAMESPACE: vigneshwaran
+  IMAGE_NAMESPACE: vignesh0756
   INFRA_REPO: vigneshwaran7890/waygood-ai-task-platform-infra
 
 jobs:
