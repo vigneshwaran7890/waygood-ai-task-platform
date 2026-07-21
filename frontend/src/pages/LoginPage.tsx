@@ -1,15 +1,16 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { loginRequest } from '../api/authApi';
 import { extractErrorMessage } from '../api/client';
-import { useAuth } from '../context/useAuth';
+import { useAppDispatch } from '../store/hooks';
+import { login } from '../store/authSlice';
+import { ROUTES } from '../routes/paths';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login } = useAuth();
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const handleSubmit = async (event: FormEvent) => {
@@ -17,9 +18,8 @@ export default function LoginPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      const { user, accessToken } = await loginRequest({ email, password });
-      login(user, accessToken);
-      navigate('/');
+      await dispatch(login({ email, password })).unwrap();
+      navigate(ROUTES.dashboard);
     } catch (err) {
       setError(extractErrorMessage(err));
     } finally {
@@ -68,7 +68,7 @@ export default function LoginPage() {
         </button>
 
         <p className="auth-card__footer">
-          Don&apos;t have an account? <Link to="/register">Create one</Link>
+          Don&apos;t have an account? <Link to={ROUTES.register}>Create one</Link>
         </p>
       </form>
     </div>

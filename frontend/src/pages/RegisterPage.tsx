@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { registerRequest } from '../api/authApi';
 import { extractErrorMessage } from '../api/client';
-import { useAuth } from '../context/useAuth';
+import { useAppDispatch } from '../store/hooks';
+import { login } from '../store/authSlice';
+import { ROUTES } from '../routes/paths';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -10,7 +11,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login } = useAuth();
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const handleSubmit = async (event: FormEvent) => {
@@ -18,9 +19,8 @@ export default function RegisterPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      const { user, accessToken } = await registerRequest({ name, email, password });
-      login(user, accessToken);
-      navigate('/');
+      await dispatch(login({ name, email, password })).unwrap();
+      navigate(ROUTES.dashboard);
     } catch (err) {
       setError(extractErrorMessage(err));
     } finally {
@@ -83,7 +83,7 @@ export default function RegisterPage() {
         </button>
 
         <p className="auth-card__footer">
-          Already have an account? <Link to="/login">Log in</Link>
+          Already have an account? <Link to={ROUTES.login}>Log in</Link>
         </p>
       </form>
     </div>

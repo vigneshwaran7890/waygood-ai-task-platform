@@ -24,9 +24,10 @@ export async function loginRequest(input: {
 }
 
 /**
- * Exchanges the httpOnly refresh cookie for a new access token. Called lazily
- * by AuthContext.ensureSession() the first time a protected route is opened
- * with no access token in memory — not unconditionally on every app load.
+ * Exchanges the httpOnly refresh cookie for a new access token. Called only
+ * from two places: the axios 401 interceptor (client.ts) when an access
+ * token has just failed, and authSlice's ensureSession thunk when a protected
+ * route is opened with no access token stored at all.
  */
 export async function refreshRequest(): Promise<AuthPayload> {
   const { data } = await client.post<ApiSuccess<AuthPayload>>('/auth/refresh');

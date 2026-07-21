@@ -1,5 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/useAuth';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { selectIsAuthenticated, selectUser } from '../store/authSelectors';
+import { logout } from '../store/authSlice';
+import { ROUTES } from '../routes/paths';
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -8,17 +11,19 @@ function initials(name: string): string {
 }
 
 export default function NavBar() {
-  const { user, logout, isAuthenticated } = useAuth();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(selectUser);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/login');
+    await dispatch(logout());
+    navigate(ROUTES.login);
   };
 
   return (
     <header className="navbar">
-      <Link to="/" className="navbar__brand">
+      <Link to={ROUTES.dashboard} className="navbar__brand">
         <span className="navbar__brand-mark">AI</span>
         Task Platform
       </Link>
