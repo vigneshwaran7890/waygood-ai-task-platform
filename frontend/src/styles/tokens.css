@@ -19,11 +19,11 @@
   --n-900: #171a21;
   --n-950: #0d0f14;
 
-  /* ---- Accent: indigo — used for actionable/interactive elements only ---- */
-  --accent-400: #818cf8;
-  --accent-500: #6366f1;
-  --accent-600: #4f46e5;
-  --accent-700: #4338ca;
+  /* ---- Accent: orange — used for actionable/interactive elements only ---- */
+  --accent-400: #fb923c;
+  --accent-500: #f97316;
+  --accent-600: #ea580c;
+  --accent-700: #c2410c;
   --accent-contrast: #ffffff;
 
   /* ---- Semantic status colors — distinct from the accent, never reused for it ---- */
@@ -53,10 +53,16 @@
 
   --accent: var(--accent-500);
   --accent-hover: var(--accent-600);
-  --accent-soft: rgba(99, 102, 241, 0.1);
+  --accent-soft: rgba(249, 115, 22, 0.12);
 
   --danger: #dc2626;
   --danger-soft: rgba(220, 38, 38, 0.1);
+
+  /* ---- Validation (form field-level feedback) — orange, distinct from
+     the red --danger used for failure/error states elsewhere ---- */
+  --validation: #ea580c;
+  --validation-soft: rgba(234, 88, 12, 0.1);
+  --validation-ring: 0 0 0 3px rgba(234, 88, 12, 0.16);
 
   /* ---- Typography ---- */
   --font-ui: 'Inter var', 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -117,7 +123,7 @@
 
     --accent: var(--accent-400);
     --accent-hover: var(--accent-500);
-    --accent-soft: rgba(129, 140, 248, 0.16);
+    --accent-soft: rgba(251, 146, 60, 0.18);
 
     --status-pending-fg: #9aa3b2;
     --status-pending-bg: rgba(154, 163, 178, 0.16);
@@ -130,6 +136,10 @@
 
     --danger: #f87171;
     --danger-soft: rgba(248, 113, 113, 0.14);
+
+    --validation: #fb923c;
+    --validation-soft: rgba(251, 146, 60, 0.16);
+    --validation-ring: 0 0 0 3px rgba(251, 146, 60, 0.2);
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.35);
@@ -156,7 +166,7 @@
 
   --accent: var(--accent-400);
   --accent-hover: var(--accent-500);
-  --accent-soft: rgba(129, 140, 248, 0.16);
+  --accent-soft: rgba(251, 146, 60, 0.18);
 
   --status-pending-fg: #9aa3b2;
   --status-pending-bg: rgba(154, 163, 178, 0.16);
@@ -169,6 +179,10 @@
 
   --danger: #f87171;
   --danger-soft: rgba(248, 113, 113, 0.14);
+
+  --validation: #fb923c;
+  --validation-soft: rgba(251, 146, 60, 0.16);
+  --validation-ring: 0 0 0 3px rgba(251, 146, 60, 0.2);
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.35);
@@ -193,7 +207,7 @@
 
   --accent: var(--accent-500);
   --accent-hover: var(--accent-600);
-  --accent-soft: rgba(99, 102, 241, 0.1);
+  --accent-soft: rgba(249, 115, 22, 0.12);
 
   --status-pending-fg: #6b7280;
   --status-pending-bg: rgba(113, 122, 138, 0.14);
@@ -206,6 +220,10 @@
 
   --danger: #dc2626;
   --danger-soft: rgba(220, 38, 38, 0.1);
+
+  --validation: #ea580c;
+  --validation-soft: rgba(234, 88, 12, 0.1);
+  --validation-ring: 0 0 0 3px rgba(234, 88, 12, 0.16);
 
   --shadow-sm: 0 1px 2px rgba(23, 26, 33, 0.06);
   --shadow-md: 0 4px 16px rgba(23, 26, 33, 0.08);

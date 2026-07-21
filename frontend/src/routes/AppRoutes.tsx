@@ -8,6 +8,7 @@ import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
 import DashboardPage from '../pages/DashboardPage';
 import TaskDetailPage from '../pages/TaskDetailPage';
+import ProfilePage from '../pages/ProfilePage';
 
 export default function AppRoutes() {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
@@ -22,6 +23,7 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route path={ROUTES.dashboard} element={<DashboardPage />} />
         <Route path={TASK_DETAIL_PATTERN} element={<TaskDetailPage />} />
+        <Route path={ROUTES.profile} element={<ProfilePage />} />
       </Route>
 
       {/*

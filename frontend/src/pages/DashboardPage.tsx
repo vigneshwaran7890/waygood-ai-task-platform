@@ -23,6 +23,23 @@ function formatTimestamp(iso: string): string {
   });
 }
 
+const RESULT_PREVIEW_LENGTH = 40;
+
+function resultPreview(task: Task): string {
+  if (task.status === 'FAILED') {
+    const message = task.errorMessage ?? 'Task failed';
+    return message.length > RESULT_PREVIEW_LENGTH
+      ? `${message.slice(0, RESULT_PREVIEW_LENGTH)}…`
+      : message;
+  }
+  if (task.result === null) {
+    return '—';
+  }
+  return task.result.length > RESULT_PREVIEW_LENGTH
+    ? `${task.result.slice(0, RESULT_PREVIEW_LENGTH)}…`
+    : task.result;
+}
+
 export default function DashboardPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -170,6 +187,7 @@ export default function DashboardPage() {
                     <th>Title</th>
                     <th>Operation</th>
                     <th>Status</th>
+                    <th>Result</th>
                     <th>Created</th>
                     <th aria-hidden="true"></th>
                   </tr>
@@ -183,6 +201,17 @@ export default function DashboardPage() {
                       </td>
                       <td>
                         <StatusBadge status={task.status} />
+                      </td>
+                      <td>
+                        <span
+                          className={
+                            task.status === 'FAILED'
+                              ? 'task-table__result task-table__result--error'
+                              : 'task-table__result'
+                          }
+                        >
+                          {resultPreview(task)}
+                        </span>
                       </td>
                       <td className="task-table__time">{formatTimestamp(task.createdAt)}</td>
                       <td>
