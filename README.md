@@ -181,12 +181,54 @@ npm run dev
 - The queue payload only carries the task id (not the full input text) — the worker reads
   full task data from MongoDB by id. This keeps queue messages small and MongoDB as the
   single source of truth for task state.
-- Kubernetes manifests, Argo CD/GitOps configuration, and CI/CD pipelines are intentionally
-  out of scope for this iteration and will be added in a follow-up (tracked separately in the
-  infrastructure repository).
+- Kubernetes manifests and Argo CD/GitOps configuration live in the separate
+  [infrastructure repository](https://github.com/CHANGE_ME/waygood-ai-task-platform-infra),
+  per the assignment's requirement to keep application code and infrastructure/deployment
+  config in distinct repos. This repository owns only the CI/CD workflow (build, lint, push,
+  and triggering an infra-repo update) since that pipeline is defined against this repo's
+  source and Dockerfiles.
+- Staging deploys automatically from every push to `main`; production only deploys from a
+  pushed version tag (`vX.Y.Z`), which fast-forwards a dedicated `production` branch in the
+  infrastructure repo. See "CI/CD pipeline" below.
+
+## CI/CD pipeline
+
+Defined in [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml). On every push and
+pull request:
+
+1. **Lint** — backend (ESLint), frontend (ESLint + `tsc` + production build), worker (Ruff) —
+   run in parallel; nothing downstream runs unless all three pass.
+
+On a push to `main` or a version tag (never on a pull request, so a fork can't publish images
+or write to the infra repo):
+
+2. **Build & push** — multi-stage Docker images for all three services, pushed to Docker Hub
+   as `docker.io/waygood/ai-task-{backend,frontend,worker}`, tagged with the short commit SHA
+   (or the version tag itself for a tagged release) plus a rolling `staging`/`latest` tag.
+3. **Update infrastructure repo** — checks out the infra repo, uses `kustomize edit set image`
+   to bump the relevant overlay's image tags, and commits/pushes:
+   - Push to `main` → updates `overlays/staging` on the infra repo's `main` branch.
+   - Push of tag `vX.Y.Z` → updates `overlays/production` on the infra repo's `production`
+     branch.
+
+   Argo CD (already configured with `selfHeal`/auto-sync in the infra repo) picks up that
+   commit and rolls the corresponding cluster forward automatically — this repo's CI never
+   talks to the Kubernetes cluster directly.
+
+### Required repository secrets
+
+Configure these under **Settings → Secrets and variables → Actions** for this repository:
+
+| Secret               | Purpose                                                          |
+| ---------------------- | ------------------------------------------------------------------ |
+| `DOCKERHUB_USERNAME`   | Docker Hub account to push images to                                |
+| `DOCKERHUB_TOKEN`      | Docker Hub access token (Account Settings → Security → New Access Token) |
+| `INFRA_REPO_TOKEN`     | A GitHub personal access token (fine-grained, `contents: write` on the infra repo only) so this workflow can commit the image-tag bump there |
 
 ## Architecture document
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full write-up covering worker
 scaling strategy, high-volume task handling, MongoDB indexing, Redis failure recovery, and
-staging/production deployment strategy.
+staging/production deployment strategy. Infrastructure-specific design decisions (Kustomize
+structure, Argo CD branch-tracking strategy, StatefulSet choices) are documented separately in
+the [infrastructure repository's `docs/ARCHITECTURE-NOTES.md`](https://github.com/CHANGE_ME/waygood-ai-task-platform-infra/blob/main/docs/ARCHITECTURE-NOTES.md).

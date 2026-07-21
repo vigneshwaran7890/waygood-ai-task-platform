@@ -1,0 +1,194 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAMESPACE: waygood
+  INFRA_REPO: waygood/waygood-ai-task-platform-infra
+
+jobs:
+  # ---------------------------------------------------------------------
+  # Lint: runs on every push and PR. Nothing gets built or pushed unless
+  # every service's linter passes.
+  # ---------------------------------------------------------------------
+  lint-backend:
+    name: Lint backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+        working-directory: backend
+      - run: npm run lint
+        working-directory: backend
+
+  lint-frontend:
+    name: Lint frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run lint
+        working-directory: frontend
+      - name: Type-check and build
+        run: npm run build
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: /api
+
+  lint-worker:
+    name: Lint worker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: worker/requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+        working-directory: worker
+      - run: ruff check .
+        working-directory: worker
+
+  # ---------------------------------------------------------------------
+  # Build & push: only on pushes to main or a version tag, never on PRs
+  # (a PR from a fork shouldn't be able to publish images or touch the
+  # infra repo).
+  # ---------------------------------------------------------------------
+  build-and-push:
+    name: Build & push images
+    needs: [lint-backend, lint-frontend, lint-worker]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.tag.outputs.value }}
+    strategy:
+      matrix:
+        service: [backend, frontend, worker]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine image tag
+        id: tag
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "value=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=main-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.service }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.service }}
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/ai-task-${{ matrix.service }}:${{ steps.tag.outputs.value }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/ai-task-${{ matrix.service }}:${{ github.ref_type == 'tag' && 'latest' || 'staging' }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  # ---------------------------------------------------------------------
+  # Deploy: updates the infra repo's Kustomize image tags and pushes.
+  # Argo CD's auto-sync (already configured with selfHeal) picks up the
+  # new commit and rolls the cluster forward — no manual `argocd sync`.
+  #
+  # main            -> overlays/staging   (staging tracks `main` directly)
+  # tag `vX.Y.Z`    -> overlays/production (production tracks its own
+  #                    long-lived `production` branch, updated only here)
+  # ---------------------------------------------------------------------
+  update-staging:
+    name: Update staging image tags
+    needs: build-and-push
+    if: github.ref_type == 'branch' && github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout infra repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.INFRA_REPO }}
+          ref: main
+          token: ${{ secrets.INFRA_REPO_TOKEN }}
+
+      - name: Install kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Set image tags
+        working-directory: overlays/staging
+        run: |
+          kustomize edit set image \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/ai-task-backend=${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/ai-task-backend:${{ needs.build-and-push.outputs.image-tag }} \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/ai-task-frontend=${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/ai-task-frontend:${{ needs.build-and-push.outputs.image-tag }} \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/ai-task-worker=${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/ai-task-worker:${{ needs.build-and-push.outputs.image-tag }}
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add overlays/staging/kustomization.yaml
+          git diff --cached --quiet && exit 0
+          git commit -m "chore(staging): deploy ${{ needs.build-and-push.outputs.image-tag }}
+
+          Source: ${{ github.repository }}@${{ github.sha }}"
+          git push origin main
+
+  update-production:
+    name: Update production image tags
+    needs: build-and-push
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout infra repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.INFRA_REPO }}
+          ref: production
+          token: ${{ secrets.INFRA_REPO_TOKEN }}
+
+      - name: Install kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Set image tags
+        working-directory: overlays/production
+        run: |
+          kustomize edit set image \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/ai-task-backend=${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/ai-task-backend:${{ needs.build-and-push.outputs.image-tag }} \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/ai-task-frontend=${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/ai-task-frontend:${{ needs.build-and-push.outputs.image-tag }} \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/ai-task-worker=${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/ai-task-worker:${{ needs.build-and-push.outputs.image-tag }}
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add overlays/production/kustomization.yaml
+          git diff --cached --quiet && exit 0
+          git commit -m "chore(production): deploy ${{ needs.build-and-push.outputs.image-tag }}
+
+          Source: ${{ github.repository }}@${{ github.sha }}"
+          git push origin production

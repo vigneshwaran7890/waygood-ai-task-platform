@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from bson import ObjectId
 from bson.errors import InvalidId
@@ -36,7 +36,7 @@ class TaskRepository:
         self._tasks.update_one(
             {"_id": ObjectId(task_id)},
             {
-                "$set": {"status": "RUNNING", "startedAt": datetime.now(timezone.utc)},
+                "$set": {"status": "RUNNING", "startedAt": datetime.now(UTC)},
                 "$push": {"logs": self._log_entry(message)},
             },
         )
@@ -48,7 +48,7 @@ class TaskRepository:
                 "$set": {
                     "status": "SUCCESS",
                     "result": result,
-                    "completedAt": datetime.now(timezone.utc),
+                    "completedAt": datetime.now(UTC),
                 },
                 "$push": {"logs": self._log_entry(message)},
             },
@@ -61,7 +61,7 @@ class TaskRepository:
                 "$set": {
                     "status": "FAILED",
                     "errorMessage": error_message,
-                    "completedAt": datetime.now(timezone.utc),
+                    "completedAt": datetime.now(UTC),
                 },
                 "$push": {"logs": self._log_entry(message, level="ERROR")},
             },
@@ -76,7 +76,7 @@ class TaskRepository:
     @staticmethod
     def _log_entry(message: str, level: str = "INFO") -> dict:
         return {
-            "timestamp": datetime.now(timezone.utc),
+            "timestamp": datetime.now(UTC),
             "level": level,
             "message": message,
         }
