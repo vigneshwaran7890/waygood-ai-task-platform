@@ -1,25 +1,10 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { User } from '../types';
 import { refreshRequest, logoutRequest } from '../api/authApi';
 import { setAccessToken } from '../api/tokenStore';
+import { AuthContext } from './authContextDefinition';
 
-interface AuthContextValue {
-  user: User | null;
-  isAuthenticated: boolean;
-  /** True while the initial silent-refresh (cookie -> session) is in flight. */
-  isInitializing: boolean;
-  login: (user: User, accessToken: string) => void;
-  logout: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+type SessionStatus = 'unknown' | 'authenticated' | 'anonymous';
 
 const USER_STORAGE_KEY = 'auth.user';
 
@@ -34,71 +19,82 @@ function readStoredUser(): User | null {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // The cached user is only a display hint (avoids a login-page flash before
-  // the silent refresh resolves) — isAuthenticated is never trusted from this
-  // alone; it flips true only once a real access token is in memory.
+  // The cached user is only a display hint (avoids a name flash once a
+  // session is confirmed) — isAuthenticated never comes from this alone, only
+  // from a real access token having been set via login() or ensureSession().
   const [user, setUser] = useState<User | null>(() => readStoredUser());
-  const [hasSession, setHasSession] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [status, setStatus] = useState<SessionStatus>('unknown');
 
-  useEffect(() => {
-    let cancelled = false;
+  // Guards against duplicate /auth/refresh calls: once a bootstrap attempt has
+  // started, every caller of ensureSession() awaits this same promise instead
+  // of firing a new request. Refs (not state) because this must be readable
+  // synchronously inside ensureSession's own body, before any re-render.
+  const bootstrapRef = useRef<Promise<boolean> | null>(null);
 
-    async function trySilentRefresh() {
-      try {
-        const { user: refreshedUser, accessToken } = await refreshRequest();
-        if (cancelled) return;
-        setAccessToken(accessToken);
-        setUser(refreshedUser);
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(refreshedUser));
-        setHasSession(true);
-      } catch {
-        if (cancelled) return;
-        setAccessToken(null);
-        setUser(null);
-        localStorage.removeItem(USER_STORAGE_KEY);
-        setHasSession(false);
-      } finally {
-        if (!cancelled) setIsInitializing(false);
-      }
-    }
-
-    trySilentRefresh();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const login = (nextUser: User, accessToken: string) => {
+  const applySession = useCallback((nextUser: User, accessToken: string) => {
     setAccessToken(accessToken);
     setUser(nextUser);
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser));
-    setHasSession(true);
-  };
+    setStatus('authenticated');
+  }, []);
 
-  const logout = async () => {
+  const clearSession = useCallback(() => {
+    setAccessToken(null);
+    setUser(null);
+    localStorage.removeItem(USER_STORAGE_KEY);
+    setStatus('anonymous');
+  }, []);
+
+  const ensureSession = useCallback((): Promise<boolean> => {
+    if (status === 'authenticated') return Promise.resolve(true);
+    if (status === 'anonymous') return Promise.resolve(false);
+
+    // status === 'unknown': this is the only branch that may call the network,
+    // and only the first caller actually does — everyone else shares its promise.
+    if (!bootstrapRef.current) {
+      bootstrapRef.current = refreshRequest()
+        .then(({ user: restoredUser, accessToken }) => {
+          applySession(restoredUser, accessToken);
+          return true;
+        })
+        .catch(() => {
+          clearSession();
+          return false;
+        })
+        .finally(() => {
+          bootstrapRef.current = null;
+        });
+    }
+
+    return bootstrapRef.current;
+  }, [status, applySession, clearSession]);
+
+  const login = useCallback(
+    (nextUser: User, accessToken: string) => {
+      applySession(nextUser, accessToken);
+    },
+    [applySession]
+  );
+
+  const logout = useCallback(async () => {
     try {
       await logoutRequest();
     } finally {
-      setAccessToken(null);
-      setUser(null);
-      localStorage.removeItem(USER_STORAGE_KEY);
-      setHasSession(false);
+      clearSession();
     }
-  };
+  }, [clearSession]);
 
   const value = useMemo(
-    () => ({ user, isAuthenticated: hasSession, isInitializing, login, logout }),
-    [user, hasSession, isInitializing]
+    () => ({
+      user,
+      isAuthenticated: status === 'authenticated',
+      isRestoringSession: status === 'unknown',
+      login,
+      logout,
+      ensureSession,
+    }),
+    [user, status, login, logout, ensureSession]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth(): AuthContextValue {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return ctx;
 }

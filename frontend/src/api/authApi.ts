@@ -24,9 +24,9 @@ export async function loginRequest(input: {
 }
 
 /**
- * Exchanges the httpOnly refresh cookie for a new access token. Used on app
- * load to silently re-establish a session without asking the user to log in
- * again, as long as their refresh cookie is still valid.
+ * Exchanges the httpOnly refresh cookie for a new access token. Called lazily
+ * by AuthContext.ensureSession() the first time a protected route is opened
+ * with no access token in memory — not unconditionally on every app load.
  */
 export async function refreshRequest(): Promise<AuthPayload> {
   const { data } = await client.post<ApiSuccess<AuthPayload>>('/auth/refresh');

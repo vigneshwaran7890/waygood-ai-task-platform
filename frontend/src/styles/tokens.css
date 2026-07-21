@@ -1,0 +1,215 @@
+/*
+  Design tokens — the single source of truth for color, type, spacing, and
+  shape across the app. Every component styles through these custom
+  properties; nothing outside this file should hardcode a hex value.
+*/
+
+:root {
+  /* ---- Base neutrals (cool slate, not pure grey) ---- */
+  --n-0: #ffffff;
+  --n-50: #f6f7f9;
+  --n-100: #eceef2;
+  --n-200: #dde1e7;
+  --n-300: #c3c9d3;
+  --n-400: #9aa3b2;
+  --n-500: #717a8a;
+  --n-600: #545c6b;
+  --n-700: #3c4250;
+  --n-800: #262b36;
+  --n-900: #171a21;
+  --n-950: #0d0f14;
+
+  /* ---- Accent: indigo — used for actionable/interactive elements only ---- */
+  --accent-400: #818cf8;
+  --accent-500: #6366f1;
+  --accent-600: #4f46e5;
+  --accent-700: #4338ca;
+  --accent-contrast: #ffffff;
+
+  /* ---- Semantic status colors — distinct from the accent, never reused for it ---- */
+  --status-pending-fg: #6b7280;
+  --status-pending-bg: rgba(113, 122, 138, 0.14);
+  --status-running-fg: #b45309;
+  --status-running-bg: rgba(217, 119, 6, 0.14);
+  --status-success-fg: #15803d;
+  --status-success-bg: rgba(22, 163, 74, 0.14);
+  --status-failed-fg: #dc2626;
+  --status-failed-bg: rgba(220, 38, 38, 0.14);
+
+  /* ---- Semantic surface roles (light theme, default) ---- */
+  --bg-canvas: var(--n-50);
+  --bg-surface: var(--n-0);
+  --bg-surface-raised: var(--n-0);
+  --bg-subtle: var(--n-100);
+  --bg-input: var(--n-0);
+
+  --border-default: var(--n-200);
+  --border-strong: var(--n-300);
+
+  --text-primary: var(--n-900);
+  --text-secondary: var(--n-600);
+  --text-muted: var(--n-500);
+  --text-on-accent: var(--accent-contrast);
+
+  --accent: var(--accent-500);
+  --accent-hover: var(--accent-600);
+  --accent-soft: rgba(99, 102, 241, 0.1);
+
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.1);
+
+  /* ---- Typography ---- */
+  --font-ui: 'Inter var', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'SFMono-Regular', Consolas, 'Cascadia Code', 'Liberation Mono', monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.625rem;
+  --text-2xl: 2rem;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+
+  /* ---- Spacing scale ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 2.5rem;
+  --space-8: 3rem;
+
+  /* ---- Shape & elevation ---- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(23, 26, 33, 0.06);
+  --shadow-md: 0 4px 16px rgba(23, 26, 33, 0.08);
+  --shadow-lg: 0 12px 32px rgba(23, 26, 33, 0.12);
+
+  --ring-focus: 0 0 0 3px var(--accent-soft);
+
+  color-scheme: light;
+}
+
+/* ---- Dark theme via OS preference ---- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-canvas: var(--n-950);
+    --bg-surface: var(--n-900);
+    --bg-surface-raised: var(--n-800);
+    --bg-subtle: var(--n-800);
+    --bg-input: var(--n-900);
+
+    --border-default: var(--n-700);
+    --border-strong: var(--n-600);
+
+    --text-primary: var(--n-50);
+    --text-secondary: var(--n-300);
+    --text-muted: var(--n-400);
+
+    --accent: var(--accent-400);
+    --accent-hover: var(--accent-500);
+    --accent-soft: rgba(129, 140, 248, 0.16);
+
+    --status-pending-fg: #9aa3b2;
+    --status-pending-bg: rgba(154, 163, 178, 0.16);
+    --status-running-fg: #fbbf24;
+    --status-running-bg: rgba(251, 191, 36, 0.16);
+    --status-success-fg: #4ade80;
+    --status-success-bg: rgba(74, 222, 128, 0.16);
+    --status-failed-fg: #f87171;
+    --status-failed-bg: rgba(248, 113, 113, 0.16);
+
+    --danger: #f87171;
+    --danger-soft: rgba(248, 113, 113, 0.14);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.45);
+
+    color-scheme: dark;
+  }
+}
+
+/* ---- Explicit overrides win over the OS preference in both directions ---- */
+:root[data-theme='dark'] {
+  --bg-canvas: var(--n-950);
+  --bg-surface: var(--n-900);
+  --bg-surface-raised: var(--n-800);
+  --bg-subtle: var(--n-800);
+  --bg-input: var(--n-900);
+
+  --border-default: var(--n-700);
+  --border-strong: var(--n-600);
+
+  --text-primary: var(--n-50);
+  --text-secondary: var(--n-300);
+  --text-muted: var(--n-400);
+
+  --accent: var(--accent-400);
+  --accent-hover: var(--accent-500);
+  --accent-soft: rgba(129, 140, 248, 0.16);
+
+  --status-pending-fg: #9aa3b2;
+  --status-pending-bg: rgba(154, 163, 178, 0.16);
+  --status-running-fg: #fbbf24;
+  --status-running-bg: rgba(251, 191, 36, 0.16);
+  --status-success-fg: #4ade80;
+  --status-success-bg: rgba(74, 222, 128, 0.16);
+  --status-failed-fg: #f87171;
+  --status-failed-bg: rgba(248, 113, 113, 0.16);
+
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.14);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.45);
+
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --bg-canvas: var(--n-50);
+  --bg-surface: var(--n-0);
+  --bg-surface-raised: var(--n-0);
+  --bg-subtle: var(--n-100);
+  --bg-input: var(--n-0);
+
+  --border-default: var(--n-200);
+  --border-strong: var(--n-300);
+
+  --text-primary: var(--n-900);
+  --text-secondary: var(--n-600);
+  --text-muted: var(--n-500);
+
+  --accent: var(--accent-500);
+  --accent-hover: var(--accent-600);
+  --accent-soft: rgba(99, 102, 241, 0.1);
+
+  --status-pending-fg: #6b7280;
+  --status-pending-bg: rgba(113, 122, 138, 0.14);
+  --status-running-fg: #b45309;
+  --status-running-bg: rgba(217, 119, 6, 0.14);
+  --status-success-fg: #15803d;
+  --status-success-bg: rgba(22, 163, 74, 0.14);
+  --status-failed-fg: #dc2626;
+  --status-failed-bg: rgba(220, 38, 38, 0.14);
+
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.1);
+
+  --shadow-sm: 0 1px 2px rgba(23, 26, 33, 0.06);
+  --shadow-md: 0 4px 16px rgba(23, 26, 33, 0.08);
+  --shadow-lg: 0 12px 32px rgba(23, 26, 33, 0.12);
+
+  color-scheme: light;
+}
