@@ -182,7 +182,7 @@ npm run dev
   full task data from MongoDB by id. This keeps queue messages small and MongoDB as the
   single source of truth for task state.
 - Kubernetes manifests and Argo CD/GitOps configuration live in the separate
-  [infrastructure repository](https://github.com/CHANGE_ME/waygood-ai-task-platform-infra),
+  [infrastructure repository](https://github.com/vigneshwaran7890/waygood-ai-task-platform-infra),
   per the assignment's requirement to keep application code and infrastructure/deployment
   config in distinct repos. This repository owns only the CI/CD workflow (build, lint, push,
   and triggering an infra-repo update) since that pipeline is defined against this repo's
@@ -231,4 +231,4 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full write-up coverin
 scaling strategy, high-volume task handling, MongoDB indexing, Redis failure recovery, and
 staging/production deployment strategy. Infrastructure-specific design decisions (Kustomize
 structure, Argo CD branch-tracking strategy, StatefulSet choices) are documented separately in
-the [infrastructure repository's `docs/ARCHITECTURE-NOTES.md`](https://github.com/CHANGE_ME/waygood-ai-task-platform-infra/blob/main/docs/ARCHITECTURE-NOTES.md).
+the [infrastructure repository's `docs/ARCHITECTURE-NOTES.md`](https://github.com/vigneshwaran7890/waygood-ai-task-platform-infra/blob/main/docs/ARCHITECTURE-NOTES.md).
