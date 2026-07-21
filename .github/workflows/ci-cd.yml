@@ -9,8 +9,8 @@ on:
 
 env:
   REGISTRY: docker.io
-  IMAGE_NAMESPACE: waygood
-  INFRA_REPO: waygood/waygood-ai-task-platform-infra
+  IMAGE_NAMESPACE: vigneshwaran
+  INFRA_REPO: vigneshwaran7890/waygood-ai-task-platform-infra
 
 jobs:
   # ---------------------------------------------------------------------
