@@ -66,6 +66,7 @@ export default function LoginPage() {
   const showEmailError = touched.email && fieldErrors.email;
   const showPasswordError = touched.password && fieldErrors.password;
 
+  
   return (
     <div className="auth-page">
       <form className="auth-card" onSubmit={handleSubmit} noValidate>
